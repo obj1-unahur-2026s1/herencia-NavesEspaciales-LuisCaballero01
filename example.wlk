@@ -4,6 +4,9 @@ class Nave{
     var combustible
 
     method estaTranquila() = (combustible>=4000) && (velocidad<12000)
+    method estaDeRelajo() = self.estaTranquila() && self.tienePocaActividad()
+    method tienePocaActividad()
+
 
     method acelerar(cuanto){
         velocidad = 100000.min(velocidad+cuanto)
@@ -41,6 +44,7 @@ class Nave{
 }
 class NaveBaliza inherits Nave{
     var baliza = "rojo"
+    const coloresQueTuvo = [baliza]
 
     override method estaTranquila(){
         return super() && (baliza != "rojo")
@@ -49,6 +53,7 @@ class NaveBaliza inherits Nave{
     // method baliza() = baliza
     method cambiarColorDeBaliza(nuevoColor){
         baliza = nuevoColor
+        coloresQueTuvo.add(baliza)
     }
     override method prepararViaje(){
         super()
@@ -61,11 +66,17 @@ class NaveBaliza inherits Nave{
     override method avisar(){
         self.cambiarColorDeBaliza("rojo")
     }
+
+    override method estaDeRelajo() = coloresQueTuvo.size()==1
 }
 class NavesDePasajeros inherits Nave{
     const cantidadPasajeros
     var racionesComida = 0
     var racionesBebida = 0
+
+    var racionesComidaServidas = 0
+    
+    override method tienePocaActividad() = racionesComidaServidas < 50
 
     method cargarComida(cantidad){
         racionesComida += cantidad
@@ -91,8 +102,12 @@ class NavesDePasajeros inherits Nave{
     }
     override method avisar(){
 // Validar que no baje de 0? o asumir que alcanza y fue.
-        racionesComida -= cantidadPasajeros
+        self.servirComida(cantidadPasajeros)
         racionesBebida -= cantidadPasajeros*2
+    }
+    method servirComida(cantidad){
+        racionesComida -= cantidad
+        racionesComidaServidas += cantidad
     }
 }
 class NaveDeCombate inherits Nave{
@@ -148,16 +163,28 @@ class NaveDeCombate inherits Nave{
 }
 
 class NaveHospital inherits NavesDePasajeros{
-    const property tienePreparadosLosQuirofanos
-// ¿?
-    
+    var tienePreparadosLosQuirofanos = false
+
+    method prepararQuirofanos(){
+        tienePreparadosLosQuirofanos = true
+    }
     override method estaTranquila(){
         return super() && (!tienePreparadosLosQuirofanos)
+    }
+
+    override method recibirAmenaza(){
+        super()
+        self.prepararQuirofanos()
     }
 }
 
 class NaveCombateSigilosa inherits NaveDeCombate{
     override method estaTranquila(){
         return super() && !self.estaInvisible()
+    }
+    override method escapar(){
+        super()
+        self.desplegarMisiles()
+        self.ponerseInvisible()
     }
 }
